@@ -2,6 +2,7 @@ from collections import defaultdict
 from decimal import Decimal
 
 from sqlalchemy import select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -59,6 +60,8 @@ class SqlBuildRepository(BuildRepository):
         required = defaultdict(int)
         available = {}
         for component_id, quantity, stock in rows:
+            if quantity <= 0:
+                raise InsufficientStockError("Некорректное количество комплектующих в сборке")
             required[component_id] += quantity
             available[component_id] = stock
 
@@ -93,8 +96,17 @@ class SqlClientRepository(ClientRepository):
 
     async def add(self, client: Client) -> Client:
         row = ClientModel(name=client.name, phone=client.phone, email=client.email)
-        self.session.add(row)
-        await self.session.flush()
+        try:
+            # Keep the surrounding stock reservation intact if another transaction
+            # creates the same phone between get_by_phone and this insert.
+            async with self.session.begin_nested():
+                self.session.add(row)
+                await self.session.flush()
+        except IntegrityError:
+            existing = await self.get_by_phone(client.phone)
+            if existing is None:
+                raise
+            return existing
         client.id = row.id
         return client
 

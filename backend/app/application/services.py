@@ -18,6 +18,8 @@ class OrderService:
         self.builds = builds
 
     async def create_order(self, data: OrderCreate) -> OrderOut:
+        # The repository reads the build price and reserves stock in the same
+        # transaction that persists the order; client-supplied prices are ignored.
         build_id = data.build_id
         estimated_price = None
         if build_id is not None:
