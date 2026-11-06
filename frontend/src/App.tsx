@@ -12,7 +12,7 @@ function Icon({ name, className = "size-5" }: { name: IconName; className?: stri
     menu: <path d="M4 7h16M4 12h16M4 17h16" />,
     shield: <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" /><path d="m9 12 2 2 4-4" /></>,
     spark: <path d="m12 3-1.3 4.2a5 5 0 0 1-3.4 3.4L3 12l4.3 1.4a5 5 0 0 1 3.4 3.4L12 21l1.3-4.2a5 5 0 0 1 3.4-3.4L21 12l-4.3-1.4a5 5 0 0 1-3.4-3.4L12 3Z" />,
-    x: <path d="m6 6 12 12M18 6 6 18" />,
+    x: <path d="m6 6 12 12M18 6 6 18" />
     zap: <path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" />,
   };
 

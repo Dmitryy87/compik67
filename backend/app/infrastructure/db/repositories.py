@@ -1,10 +1,13 @@
-from sqlalchemy import select
+from collections import defaultdict
+from decimal import Decimal
+
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.domain.entities import Build, Client, Order
+from app.domain.entities import Build, Client, InsufficientStockError, Order
 from app.domain.repositories import BuildRepository, ClientRepository, OrderRepository
-from app.infrastructure.db.models import BuildComponent, BuildModel, ClientModel, OrderModel, Status
+from app.infrastructure.db.models import BuildComponent, BuildModel, ClientModel, Component, OrderModel, Status
 
 
 class SqlBuildRepository(BuildRepository):
@@ -33,6 +36,51 @@ class SqlBuildRepository(BuildRepository):
 
     async def exists(self, build_id: int) -> bool:
         return await self.session.get(BuildModel, build_id) is not None
+
+    async def reserve_components(self, build_id: int) -> Decimal:
+        build = await self.session.get(BuildModel, build_id)
+        if build is None:
+            raise LookupError("Сборка не найдена")
+
+        rows = (
+            await self.session.execute(
+                select(
+                    BuildComponent.component_id,
+                    BuildComponent.quantity,
+                    Component.stock,
+                )
+                .join(Component, Component.id == BuildComponent.component_id)
+                .where(BuildComponent.build_id == build_id)
+                .order_by(BuildComponent.component_id)
+                .with_for_update(of=Component)
+            )
+        ).all()
+
+        required = defaultdict(int)
+        available = {}
+        for component_id, quantity, stock in rows:
+            required[component_id] += quantity
+            available[component_id] = stock
+
+        insufficient = [
+            str(component_id)
+            for component_id, quantity in required.items()
+            if available[component_id] < quantity
+        ]
+        if insufficient:
+            raise InsufficientStockError(
+                "Недостаточно комплектующих на складе: " + ", ".join(insufficient)
+            )
+
+        for component_id, quantity in required.items():
+            await self.session.execute(
+                update(Component)
+                .where(Component.id == component_id)
+                .values(stock=Component.stock - quantity)
+            )
+
+        await self.session.flush()
+        return build.price
 
 
 class SqlClientRepository(ClientRepository):

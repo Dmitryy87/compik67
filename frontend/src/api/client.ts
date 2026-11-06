@@ -20,7 +20,7 @@ export type OrderPayload = {
   estimated_price?: number;
 };
 
-export type OrderResponse = { id: number; status: string; created_at: string | null };
+export type OrderResponse = { id: number; status: string; created_at: string | null; estimated_price: string | null };
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? "/api",

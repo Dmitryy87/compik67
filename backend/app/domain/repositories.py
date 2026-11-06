@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from decimal import Decimal
 
 from app.domain.entities import Build, Client, Order
 
@@ -9,6 +10,9 @@ class BuildRepository(ABC):
 
     @abstractmethod
     async def exists(self, build_id: int) -> bool: ...
+
+    @abstractmethod
+    async def reserve_components(self, build_id: int) -> Decimal: ...
 
 
 class ClientRepository(ABC):

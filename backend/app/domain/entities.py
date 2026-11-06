@@ -41,3 +41,7 @@ class Order:
     estimated_price: Decimal | None = None
     message: str | None = None
     created_at: datetime | None = None
+
+
+class InsufficientStockError(Exception):
+    """Raised when a build requires more components than are available."""

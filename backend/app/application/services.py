@@ -18,13 +18,14 @@ class OrderService:
         self.builds = builds
 
     async def create_order(self, data: OrderCreate) -> OrderOut:
+        build_id = data.build_id
+        estimated_price = None
+        if build_id is not None:
+            estimated_price = await self.builds.reserve_components(build_id)
+
         client = await self.clients.get_by_phone(data.phone)
         if client is None:
             client = await self.clients.add(Client(id=None, name=data.name, phone=data.phone, email=data.email))
-
-        build_id = data.build_id
-        if build_id is not None and not await self.builds.exists(build_id):
-            build_id = None
 
         order = await self.orders.add(
             Order(
@@ -34,14 +35,19 @@ class OrderService:
                 build_id=build_id,
                 purpose=data.purpose,
                 performance=data.performance,
-                estimated_price=data.estimated_price,
+                estimated_price=estimated_price,
                 message=data.message,
             )
         )
-        return OrderOut(id=order.id, status=order.status_code, created_at=order.created_at)
+        return OrderOut(
+            id=order.id,
+            status=order.status_code,
+            created_at=order.created_at,
+            estimated_price=order.estimated_price,
+        )
 
     async def get_order(self, order_id: int) -> OrderOut | None:
         order = await self.orders.get(order_id)
         if order is None:
             return None
-        return OrderOut(id=order.id, status=order.status_code, created_at=order.created_at)
+        return OrderOut(id=order.id, status=order.status_code, created_at=order.created_at, estimated_price=order.estimated_price)
