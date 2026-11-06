@@ -22,10 +22,10 @@ class OrderCreate(BaseModel):
     build_id: int | None = None
     purpose: str | None = Field(default=None, max_length=30)
     performance: str | None = Field(default=None, max_length=30)
-    estimated_price: Decimal | None = None
 
 
 class OrderOut(BaseModel):
     id: int
     status: str
     created_at: datetime | None
+    estimated_price: Decimal | None = None

@@ -17,7 +17,6 @@ export type OrderPayload = {
   build_id?: number | null;
   purpose?: string;
   performance?: string;
-  estimated_price?: number;
 };
 
 export type OrderResponse = { id: number; status: string; created_at: string | null; estimated_price: string | null };

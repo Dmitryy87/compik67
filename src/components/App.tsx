@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
+import axios from "axios";
 import { Build, createOrder, getBuilds } from "./api/client";
 
 type IconName = "arrow" | "check" | "chevron" | "cpu" | "menu" | "shield" | "spark" | "x" | "zap";
@@ -94,11 +95,12 @@ function App() {
         build_id: selectedBuild?.id ?? null,
         purpose: useConfigurator ? purpose : undefined,
         performance: useConfigurator ? performance : undefined,
-        estimated_price: selectedBuild ? Number(selectedBuild.price) : useConfigurator ? total : undefined,
       });
       setOrderId(order.id);
-    } catch {
-      setSubmitError("Не удалось отправить заявку. Проверьте данные и попробуйте ещё раз.");
+    } catch (error) {
+      setSubmitError(axios.isAxiosError(error) && error.response?.status === 409
+        ? "Не удалось оформить заказ: комплектующих недостаточно или состав сборки некорректен."
+        : "Не удалось отправить заявку. Проверьте данные и попробуйте ещё раз.");
     } finally {
       setSubmitting(false);
     }
